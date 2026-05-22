@@ -1,5 +1,5 @@
 (function () {
-  var NAV_BRIDGE_VERSION = '2026-05-22-guides';
+  var NAV_BRIDGE_VERSION = '2026-05-22-guides-compact';
   if (window.brqResourceNavBridgeVersion === NAV_BRIDGE_VERSION) return;
   window.brqResourceNavBridgeVersion = NAV_BRIDGE_VERSION;
   window.brqResourceNavBridgeLoaded = true;
@@ -43,6 +43,20 @@
       }
     }
     return null;
+  }
+
+  function ensureCompactDesktopStyle() {
+    if (document.getElementById('brq-resource-nav-bridge-style')) return;
+    var style = document.createElement('style');
+    style.id = 'brq-resource-nav-bridge-style';
+    style.textContent = [
+      '@media (min-width:900px) and (max-width:1280px){',
+      '.header-display-desktop .header-nav-list{white-space:nowrap!important;}',
+      '.header-display-desktop .header-nav-item{margin-right:3px!important;}',
+      '.header-display-desktop .header-nav-list a,.header-display-desktop .header-nav-folder-title{font-size:12px!important;letter-spacing:0!important;white-space:nowrap!important;}',
+      '}'
+    ].join('');
+    document.head.appendChild(style);
   }
 
   function addDesktopLink() {
@@ -91,6 +105,7 @@
   }
 
   function applyNavBridge() {
+    ensureCompactDesktopStyle();
     addDesktopLink();
     addMobileLink();
   }
