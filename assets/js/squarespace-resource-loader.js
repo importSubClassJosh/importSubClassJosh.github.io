@@ -1,4 +1,7 @@
 (function () {
+  if (window.brqSquarespaceResourceLoaderActive) return;
+  window.brqSquarespaceResourceLoaderActive = true;
+
   var SOURCE_ORIGIN = 'https://importsubclassjosh.github.io';
   var ROUTES = {
     '/start-here/': '/start-here/',
@@ -97,6 +100,8 @@
       '.brq-resource-root .toc,.brq-resource-root .disclaimer-block,.brq-resource-root .author-box{border-left:4px solid #b68a35;background:#fffdf8;padding:18px 20px;margin:24px 0;border-radius:6px;}',
       '.brq-resource-root .site-disclaimer,.brq-resource-root footer{background:#2a2523;color:#fbf7ef;padding:28px 24px;}',
       '.brq-resource-root .site-disclaimer a,.brq-resource-root footer a{color:#f1d58d;}',
+      '.brq-resource-nav{display:flex;flex-wrap:wrap;gap:10px;align-items:center;padding:14px 24px;background:#fffdf8;border-bottom:1px solid rgba(91,23,36,.16);}',
+      '.brq-resource-nav a{font-size:.9rem;font-weight:700;color:#5b1724;text-decoration:none;border:1px solid rgba(91,23,36,.18);border-radius:6px;padding:7px 10px;background:#fbf7ef;}',
       '.brq-resource-root table{width:100%;border-collapse:collapse;margin:18px 0;background:#fffdf8;}',
       '.brq-resource-root th,.brq-resource-root td{border:1px solid rgba(91,23,36,.18);padding:10px;text-align:left;vertical-align:top;}',
       '.brq-resource-status{max-width:900px;margin:40px auto;padding:22px;border:1px solid #b68a35;background:#fffdf8;color:#252525;}',
@@ -168,10 +173,24 @@
     var root = document.createElement('article');
     root.id = 'brq-resource-print-root';
     root.className = 'brq-resource-root';
-    root.innerHTML = content.html;
+    root.innerHTML = resourceNav() + content.html;
     page.innerHTML = '';
     page.appendChild(root);
     updateMeta(content);
+  }
+
+  function resourceNav() {
+    return '<nav class="brq-resource-nav" aria-label="Real estate resource navigation">' +
+      '<a href="/">Home</a>' +
+      '<a href="/start-here/">Start Here</a>' +
+      '<a href="/resource-center/">Resource Center</a>' +
+      '<a href="/articles/">Blog / Articles</a>' +
+      '<a href="/about/">About</a>' +
+      '<a href="/contact/">Contact</a>' +
+      '<a href="/privacy-policy/">Privacy Policy</a>' +
+      '<a href="/editorial-policy/">Editorial Policy</a>' +
+      '<a href="/real-estate-disclaimer/">Real Estate Disclaimer</a>' +
+    '</nav>';
   }
 
   function showStatus(message) {
