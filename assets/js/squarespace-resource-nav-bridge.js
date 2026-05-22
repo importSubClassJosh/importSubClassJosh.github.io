@@ -1,9 +1,11 @@
 (function () {
-  if (window.brqResourceNavBridgeLoaded) return;
+  var NAV_BRIDGE_VERSION = '2026-05-22-guides';
+  if (window.brqResourceNavBridgeVersion === NAV_BRIDGE_VERSION) return;
+  window.brqResourceNavBridgeVersion = NAV_BRIDGE_VERSION;
   window.brqResourceNavBridgeLoaded = true;
 
   var RESOURCE_HREF = '/resource-center/';
-  var RESOURCE_TEXT = 'RESOURCES';
+  var RESOURCE_TEXT = 'GUIDES';
 
   function text(value) {
     return String(value || '').replace(/\s+/g, ' ').trim().toUpperCase();
@@ -12,7 +14,18 @@
   function hasResourceLink(root) {
     return Array.prototype.some.call(root.querySelectorAll('a'), function (link) {
       var href = link.getAttribute('href') || '';
-      return href === RESOURCE_HREF || href === '/resource-center' || text(link.textContent) === RESOURCE_TEXT;
+      return href === RESOURCE_HREF || href === '/resource-center';
+    });
+  }
+
+  function normalizeResourceLinks(root) {
+    Array.prototype.forEach.call(root.querySelectorAll('a'), function (link) {
+      var href = link.getAttribute('href') || '';
+      if (href !== RESOURCE_HREF && href !== '/resource-center') return;
+      var mobileLabel = link.querySelector('.header-menu-nav-item-content');
+      if (mobileLabel) mobileLabel.textContent = RESOURCE_TEXT;
+      else link.textContent = RESOURCE_TEXT;
+      link.setAttribute('aria-label', 'Guides and resources');
     });
   }
 
@@ -34,6 +47,7 @@
 
   function addDesktopLink() {
     document.querySelectorAll('.header-nav-list').forEach(function (nav) {
+      normalizeResourceLinks(nav);
       if (hasResourceLink(nav)) return;
       var item = document.createElement('div');
       item.className = 'header-nav-item header-nav-item--collection brq-resource-nav-item';
@@ -54,6 +68,7 @@
 
   function addMobileLink() {
     document.querySelectorAll('.header-menu-nav-wrapper').forEach(function (wrapper) {
+      normalizeResourceLinks(wrapper);
       if (hasResourceLink(wrapper)) return;
       var item = document.createElement('div');
       item.className = 'container header-menu-nav-item header-menu-nav-item--collection brq-resource-menu-item';
