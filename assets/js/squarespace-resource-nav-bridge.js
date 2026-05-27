@@ -1,5 +1,5 @@
 (function () {
-  var NAV_BRIDGE_VERSION = '2026-05-27-education-nav';
+  var NAV_BRIDGE_VERSION = '2026-05-27-native-education-nav';
   if (window.brqResourceNavBridgeVersion === NAV_BRIDGE_VERSION) return;
   window.brqResourceNavBridgeVersion = NAV_BRIDGE_VERSION;
   window.brqResourceNavBridgeLoaded = true;
@@ -178,9 +178,11 @@
   function applyNavBridge() {
     ensureCompactDesktopStyle();
     addDesktopLink();
-    addDesktopEducationLink();
+    // Squarespace now owns the Education nav item. Keep this commented out so
+    // the bridge does not create a duplicate EDUCATION link in the main nav.
+    // addDesktopEducationLink();
     addMobileLink();
-    addMobileEducationLink();
+    // addMobileEducationLink();
   }
 
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', applyNavBridge);

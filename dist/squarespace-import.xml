@@ -132,17 +132,22 @@
       <dc:creator><![CDATA[agent-resource-desk]]></dc:creator>
       <guid isPermaLink="false">https://www.briquerealty.com/education/?import_id=1001</guid>
       <description><![CDATA[National real estate license exam prep with free section practice, answer explanations, memory tricks, and a $19 full exam prep unlock.]]></description>
-      <content:encoded><![CDATA[<section class="hero">
-    <div class="hero-copy">
+      <content:encoded><![CDATA[<section class="education-hero" style="--education-hero-image: url('https://importsubclassjosh.github.io/assets/images/resource-center-banner.png')">
+    <div class="education-hero-inner">
       <p class="eyebrow">National real estate exam prep</p>
       <h1>Real Estate License Exam Prep</h1>
-      <p>Practice national real estate salesperson exam topics by section for free, then unlock mixed practice, timed mock exams, saved progress, missed-question review, and full mnemonic cram sheets for $19.</p>
-      <div class="actions"><a class="button " href="#practice">Start Free Practice</a><a class="button secondary" href="#full-exam-prep">Unlock Full Prep - $19</a></div>
+      <p>Practice by topic for free, then unlock mixed practice, timed mock exams, saved progress, missed-question review, and the full mnemonic cram sheet for one $19 payment.</p>
+      <div class="education-hero-actions">
+        <a class="button" href="#practice">Start Free Practice</a>
+        <a class="button secondary" href="#full-exam-prep">Unlock Full Prep - $19</a>
+      </div>
+      <dl class="education-hero-metrics" aria-label="Exam prep details">
+        <div><dt>275</dt><dd>free section questions</dd></div>
+        <div><dt>11</dt><dd>national topic sections</dd></div>
+        <div><dt>$19</dt><dd>one-time full unlock</dd></div>
+      </dl>
+      <p class="education-hero-note">Original exam-style practice questions with plain-English explanations and memory tricks. No protected exam questions or pass guarantee.</p>
     </div>
-    <figure class="hero-image">
-    <img src="https://raw.githubusercontent.com/importSubClassJosh/briquerealty-resource-site/main/assets/images/resource-center-banner.png" alt="A refined resource library scene with categorized folders, contracts, laptop, and Georgia property silhouettes." loading="eager">
-    <figcaption>A refined resource library scene with categorized folders, contracts, laptop, and Georgia property silhouettes.</figcaption>
-  </figure>
   </section>
   <section class="education-intro content-band" aria-label="Exam prep overview">
     <div class="education-intro-grid">

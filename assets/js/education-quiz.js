@@ -788,7 +788,7 @@
     root.innerHTML = [
       '<div class="education-app">',
       '<div class="education-topbar">',
-      '<div><p class="eyebrow">Practice dashboard</p><h2>Pick a national exam section.</h2><p>Every section has 25 free questions. The $19 full prep unlock adds all-section practice, timed mock exams, saved progress, missed-question review, and the full mnemonic cram sheet.</p></div>',
+      '<div class="education-dashboard-copy"><p class="eyebrow">Practice dashboard</p><h2>Pick a national exam section.</h2><p>Every section has 25 free questions. The $19 full prep unlock adds the test-day tools: mixed practice, timed mock exams, saved progress, missed-question review, and the full mnemonic cram sheet.</p></div>',
       '<div class="education-actions">',
       '<button class="button" data-action="' + (unlocked ? "mixed-practice" : "paywall") + '"' + (checking ? " disabled" : "") + '>Mixed Practice</button>',
       '<button class="button secondary" data-action="' + (unlocked ? "mock-exam" : "paywall") + '"' + (checking ? " disabled" : "") + ">Mock Exam</button>",
@@ -796,9 +796,9 @@
       '</div>',
       accessBanner,
       '<div class="education-stats">',
-      '<span><strong>' + sections.length + '</strong> sections</span>',
-      '<span><strong>' + sections.length * FREE_LIMIT + '</strong> free questions</span>',
-      '<span><strong>$19</strong> full prep unlock</span>',
+      '<span><strong>' + sections.length + '</strong><small>national sections</small></span>',
+      '<span><strong>' + sections.length * FREE_LIMIT + '</strong><small>free questions</small></span>',
+      '<span><strong>$19</strong><small>one-time unlock</small></span>',
       '</div>',
       '<div class="education-section-grid">',
       sections
@@ -806,7 +806,7 @@
           var score = sectionScore(section.id);
           return (
             '<article class="education-section-card">' +
-            '<div><span class="education-weight">' +
+            '<div class="education-section-copy"><span class="education-weight">' +
             escapeHtml(section.weight) +
             '</span><h3>' +
             escapeHtml(section.name) +
@@ -821,7 +821,7 @@
               .join("") +
             '</div><div class="education-card-footer"><span>' +
             (score ? "Last score: " + escapeHtml(score) : "25 free questions") +
-            '</span><button class="button" data-start="' +
+            '</span><button class="button secondary" data-start="' +
             section.id +
             '">Practice</button></div></article>'
           );
@@ -1043,7 +1043,7 @@
       "beforeend",
       '<div class="education-modal" role="dialog" aria-modal="true" aria-label="Unlock Full Exam Prep"><div class="education-modal-card"><button class="modal-close" data-action="close-paywall" aria-label="Close">Close</button><p class="eyebrow">Full Exam Prep</p><h2>Unlock the real test simulation.</h2>' +
         (message ? '<div class="form-message">' + escapeHtml(message) + "</div>" : "") +
-        '<p>You have free section practice. The $19 unlock adds the tools candidates care about close to test day: mixed practice, timed mock exams, saved progress, missed-question review, weak-area scoring, and the full mnemonic cram sheet.</p><form class="unlock-form" data-unlock-form><label>Email for checkout<input name="email" type="email" autocomplete="email" required placeholder="you@example.com" value="' +
+        '<p>You have free section practice. The $19 unlock adds the tools candidates care about close to test day.</p><ul class="education-modal-benefits"><li>Mixed practice across all national sections</li><li>Timed mock exam mode</li><li>Saved progress, restore code, and missed-question review</li><li>Full mnemonic cram sheet for final review</li></ul><form class="unlock-form" data-unlock-form><label>Email for checkout<input name="email" type="email" autocomplete="email" required placeholder="you@example.com" value="' +
         escapeHtml(pendingEmail) +
         '"></label><button class="button" type="submit">Continue to Secure Stripe Checkout - $19</button></form><div class="restore-divider"><span>Already paid?</span></div><form class="unlock-form restore-form" data-restore-form><label>Email used at checkout<input name="email" type="email" autocomplete="email" required placeholder="you@example.com" value="' +
         escapeHtml(pendingEmail) +

@@ -805,6 +805,27 @@ function hero({ eyebrow, title, text, image, actions = [] }) {
   </section>`;
 }
 
+function educationHero() {
+  const heroImage = "https://importsubclassjosh.github.io/assets/images/resource-center-banner.png";
+  return `<section class="education-hero" style="--education-hero-image: url('${heroImage}')">
+    <div class="education-hero-inner">
+      <p class="eyebrow">National real estate exam prep</p>
+      <h1>Real Estate License Exam Prep</h1>
+      <p>Practice by topic for free, then unlock mixed practice, timed mock exams, saved progress, missed-question review, and the full mnemonic cram sheet for one $19 payment.</p>
+      <div class="education-hero-actions">
+        <a class="button" href="#practice">Start Free Practice</a>
+        <a class="button secondary" href="#full-exam-prep">Unlock Full Prep - $19</a>
+      </div>
+      <dl class="education-hero-metrics" aria-label="Exam prep details">
+        <div><dt>275</dt><dd>free section questions</dd></div>
+        <div><dt>11</dt><dd>national topic sections</dd></div>
+        <div><dt>$19</dt><dd>one-time full unlock</dd></div>
+      </dl>
+      <p class="education-hero-note">Original exam-style practice questions with plain-English explanations and memory tricks. No protected exam questions or pass guarantee.</p>
+    </div>
+  </section>`;
+}
+
 function renderHome() {
   const body = `${hero({
     eyebrow: "Georgia real estate education",
@@ -848,17 +869,7 @@ function renderHome() {
 }
 
 function renderEducation() {
-  const body = `${hero({
-    eyebrow: "National real estate exam prep",
-    title: "Real Estate License Exam Prep",
-    text:
-      "Practice national real estate salesperson exam topics by section for free, then unlock mixed practice, timed mock exams, saved progress, missed-question review, and full mnemonic cram sheets for $19.",
-    image: "resource-center-banner.png",
-    actions: [
-      { href: "#practice", label: "Start Free Practice" },
-      { href: "#full-exam-prep", label: "Unlock Full Prep - $19", secondary: true }
-    ]
-  })}
+  const body = `${educationHero()}
   <section class="education-intro content-band" aria-label="Exam prep overview">
     <div class="education-intro-grid">
       <article>
