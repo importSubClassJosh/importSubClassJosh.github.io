@@ -1,17 +1,58 @@
 (function () {
   var FREE_LIMIT = 25;
   var STORAGE_KEY = "brqEducationProgress";
-  var UNLOCK_KEY = "brqEducationFullPrepUnlocked";
+  var ACCESS_TOKEN_KEY = "brqEducationAccessToken";
+  var ACCESS_EMAIL_KEY = "brqEducationAccessEmail";
+  var ACCESS_CODE_KEY = "brqEducationAccessCode";
   var PENDING_EMAIL_KEY = "brqEducationPendingAccount";
   var CHECKOUT_URL = "https://buy.stripe.com/28EaEW62x1Hf6kq8pWbjW05";
+  var ACCESS_API_URL = "https://brique-education-access.josue-brique.workers.dev";
 
   function checkoutUrl(email) {
     var url = new URL(CHECKOUT_URL);
     if (email) url.searchParams.set("prefilled_email", email);
+    url.searchParams.set("client_reference_id", checkoutReferenceId());
     url.searchParams.set("utm_source", "briquerealty");
     url.searchParams.set("utm_medium", "education_page");
     url.searchParams.set("utm_campaign", "national_exam_prep");
     return url.href;
+  }
+
+  function checkoutReferenceId() {
+    try {
+      var existing = sessionStorage.getItem("brqEducationCheckoutReference");
+      if (existing) return existing;
+      var bytes = new Uint8Array(8);
+      crypto.getRandomValues(bytes);
+      var suffix = Array.from(bytes, function (byte) {
+        return byte.toString(16).padStart(2, "0");
+      }).join("");
+      var reference = "brqedu_" + Date.now().toString(36) + "_" + suffix;
+      sessionStorage.setItem("brqEducationCheckoutReference", reference);
+      return reference;
+    } catch (error) {
+      return "brqedu_" + Date.now().toString(36);
+    }
+  }
+
+  function trackEvent(name, params) {
+    var payload = Object.assign(
+      {
+        event_category: "education_exam_prep",
+        item_id: "national_exam_prep_full",
+        item_name: "BriqueRealty Full Exam Prep",
+        currency: "USD",
+        value: 19
+      },
+      params || {}
+    );
+    try {
+      window.dataLayer = window.dataLayer || [];
+      if (typeof window.gtag === "function") window.gtag("event", name, payload);
+      else window.dataLayer.push(Object.assign({ event: name }, payload));
+    } catch (error) {
+      return;
+    }
   }
 
   function q(prompt, correct, wrong, explanation, memory) {
@@ -408,7 +449,13 @@
     selectedChoice: null,
     mode: "dashboard",
     session: null,
-    progress: loadProgress()
+    progress: loadProgress(),
+    accessStatus: "locked",
+    accessEmail: "",
+    accessToken: "",
+    accessCode: "",
+    accessMessage: "",
+    progressSyncStatus: ""
   };
 
   function loadProgress() {
@@ -425,32 +472,167 @@
     } catch (error) {
       return;
     }
+    syncProgress();
   }
 
   function isUnlocked() {
-    try {
-      return localStorage.getItem(UNLOCK_KEY) === "true";
-    } catch (error) {
-      return false;
-    }
+    return state.accessStatus === "unlocked";
   }
 
-  function markUnlocked() {
+  function apiPost(path, payload) {
+    return fetch(ACCESS_API_URL + path, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify(payload || {})
+    }).then(function (response) {
+      return response.json().then(function (data) {
+        if (!response.ok || !data.ok) {
+          var error = new Error(data.error || "request_failed");
+          error.data = data;
+          throw error;
+        }
+        return data;
+      });
+    });
+  }
+
+  function storeAccess(payload) {
+    state.accessStatus = "unlocked";
+    state.accessToken = payload.token || state.accessToken;
+    state.accessEmail = payload.email || state.accessEmail;
+    state.accessCode = payload.access_code || state.accessCode;
+    state.accessMessage = "Full prep unlocked.";
     try {
-      localStorage.setItem(UNLOCK_KEY, "true");
+      if (state.accessToken) localStorage.setItem(ACCESS_TOKEN_KEY, state.accessToken);
+      if (state.accessEmail) localStorage.setItem(ACCESS_EMAIL_KEY, state.accessEmail);
+      if (state.accessCode) localStorage.setItem(ACCESS_CODE_KEY, state.accessCode);
+      localStorage.removeItem("brqEducationFullPrepUnlocked");
     } catch (error) {
       return;
     }
   }
 
-  function hydratePaidUnlockFromUrl() {
-    var params = new URLSearchParams(window.location.search);
-    if (params.get("exam_prep") === "paid" || params.get("session_id")) {
-      markUnlocked();
-      if (window.history && window.history.replaceState) {
-        window.history.replaceState({}, document.title, window.location.pathname + "#practice");
-      }
+  function loadStoredAccess() {
+    try {
+      state.accessToken = localStorage.getItem(ACCESS_TOKEN_KEY) || "";
+      state.accessEmail = localStorage.getItem(ACCESS_EMAIL_KEY) || "";
+      state.accessCode = localStorage.getItem(ACCESS_CODE_KEY) || "";
+      if (state.accessToken) state.accessStatus = "checking";
+    } catch (error) {
+      return;
     }
+  }
+
+  function cleanCheckoutUrl() {
+    if (window.history && window.history.replaceState) {
+      window.history.replaceState({}, document.title, window.location.pathname + "#practice");
+    }
+  }
+
+  function hydratePaidUnlockFromUrl(root) {
+    var params = new URLSearchParams(window.location.search);
+    var sessionId = params.get("session_id");
+    if (!sessionId) return false;
+    state.accessStatus = "checking";
+    state.accessMessage = "Verifying your Stripe payment...";
+    renderDashboard(root);
+    apiPost("/claim", { session_id: sessionId })
+      .then(function (payload) {
+        storeAccess(payload);
+        trackEvent("purchase", {
+          transaction_id: payload.transaction_id || sessionId,
+          value: payload.value || 19,
+          currency: String(payload.currency || "usd").toUpperCase()
+        });
+        cleanCheckoutUrl();
+        loadCloudProgress(root);
+        renderDashboard(root);
+        renderAccessSuccess(root, payload);
+      })
+      .catch(function () {
+        state.accessStatus = "locked";
+        state.accessMessage = "Payment verification did not complete. Use restore access or contact support with your Stripe receipt.";
+        renderDashboard(root);
+        renderPaywall(root, state.accessMessage);
+      });
+    return true;
+  }
+
+  function verifyStoredAccess(root) {
+    if (!state.accessToken) return;
+    state.accessStatus = "checking";
+    state.accessMessage = "Checking saved full-prep access...";
+    renderDashboard(root);
+    apiPost("/verify", { token: state.accessToken })
+      .then(function (payload) {
+        storeAccess(Object.assign({}, payload, { token: state.accessToken }));
+        loadCloudProgress(root);
+        renderDashboard(root);
+      })
+      .catch(function () {
+        state.accessStatus = "locked";
+        state.accessMessage = "Saved access could not be verified. Restore with your email and access code.";
+        try {
+          localStorage.removeItem(ACCESS_TOKEN_KEY);
+        } catch (error) {
+          return;
+        }
+        renderDashboard(root);
+      });
+  }
+
+  function mergeProgress(remoteProgress) {
+    if (!remoteProgress || typeof remoteProgress !== "object") return;
+    Object.keys(remoteProgress).forEach(function (sectionId) {
+      var local = state.progress[sectionId] || {};
+      var remote = remoteProgress[sectionId] || {};
+      state.progress[sectionId] = Object.assign({}, remote, local);
+      if (remote.completedAt && (!local.completedAt || remote.completedAt > local.completedAt)) {
+        state.progress[sectionId].score = remote.score;
+        state.progress[sectionId].total = remote.total;
+        state.progress[sectionId].completedAt = remote.completedAt;
+      }
+      var missed = []
+        .concat(Array.isArray(remote.missed) ? remote.missed : [])
+        .concat(Array.isArray(local.missed) ? local.missed : []);
+      if (missed.length) {
+        var seen = {};
+        state.progress[sectionId].missed = missed.filter(function (item) {
+          if (!item || !item.prompt || seen[item.prompt]) return false;
+          seen[item.prompt] = true;
+          return true;
+        }).slice(-40);
+      }
+    });
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(state.progress));
+    } catch (error) {
+      return;
+    }
+  }
+
+  function loadCloudProgress(root) {
+    if (!state.accessToken) return;
+    apiPost("/progress/get", { token: state.accessToken })
+      .then(function (payload) {
+        mergeProgress(payload.progress);
+        state.progressSyncStatus = "Progress synced.";
+        if (state.mode === "dashboard") renderDashboard(root);
+      })
+      .catch(function () {
+        state.progressSyncStatus = "Progress is saved locally. Cloud sync will retry later.";
+      });
+  }
+
+  function syncProgress() {
+    if (!state.accessToken || state.accessStatus !== "unlocked") return;
+    apiPost("/progress/save", { token: state.accessToken, progress: state.progress })
+      .then(function () {
+        state.progressSyncStatus = "Progress synced.";
+      })
+      .catch(function () {
+        state.progressSyncStatus = "Progress saved locally.";
+      });
   }
 
   function escapeHtml(value) {
@@ -590,16 +772,29 @@
 
   function renderDashboard(root) {
     var unlocked = isUnlocked();
+    var checking = state.accessStatus === "checking";
+    var accessBanner = "";
+    if (checking) {
+      accessBanner = '<div class="unlock-confirm dashboard-unlock is-checking"><h3>Checking access...</h3><p>' + escapeHtml(state.accessMessage || "Verifying your full-prep unlock.") + "</p></div>";
+    } else if (unlocked) {
+      accessBanner =
+        '<div class="unlock-confirm dashboard-unlock"><h3>Full prep unlocked.</h3><p>Mixed practice, timed mock exams, missed-question review, cloud-synced progress, and the full mnemonic cram sheet are available.' +
+        (state.accessEmail ? " Signed in as " + escapeHtml(state.accessEmail) + "." : "") +
+        (state.progressSyncStatus ? " " + escapeHtml(state.progressSyncStatus) : "") +
+        '</p><div class="access-actions"><button class="button secondary" data-action="show-access-code">Access Code</button><button class="button secondary" data-action="sync-progress">Sync Progress</button></div></div>';
+    } else if (state.accessMessage) {
+      accessBanner = '<div class="unlock-confirm dashboard-unlock is-warning"><h3>Restore full prep.</h3><p>' + escapeHtml(state.accessMessage) + '</p><button class="button secondary" data-action="paywall">Restore Access</button></div>';
+    }
     root.innerHTML = [
       '<div class="education-app">',
       '<div class="education-topbar">',
-      '<div><p class="eyebrow">Practice dashboard</p><h2>Pick a national exam section.</h2><p>Every section has 25 free questions. Mixed practice, mock exams, browser progress saving, missed-question review, and the full mnemonic cram sheet are part of the $19 unlock.</p></div>',
+      '<div><p class="eyebrow">Practice dashboard</p><h2>Pick a national exam section.</h2><p>Every section has 25 free questions. The $19 full prep unlock adds all-section practice, timed mock exams, saved progress, missed-question review, and the full mnemonic cram sheet.</p></div>',
       '<div class="education-actions">',
-      '<button class="button" data-action="' + (unlocked ? "mixed-practice" : "paywall") + '">Mixed Practice</button>',
-      '<button class="button secondary" data-action="' + (unlocked ? "mock-exam" : "paywall") + '">Mock Exam</button>',
+      '<button class="button" data-action="' + (unlocked ? "mixed-practice" : "paywall") + '"' + (checking ? " disabled" : "") + '>Mixed Practice</button>',
+      '<button class="button secondary" data-action="' + (unlocked ? "mock-exam" : "paywall") + '"' + (checking ? " disabled" : "") + ">Mock Exam</button>",
       '</div>',
       '</div>',
-      unlocked ? '<div class="unlock-confirm dashboard-unlock"><h3>Full prep is unlocked in this browser.</h3><p>Mixed practice, timed mock exam, missed-question review, and the full mnemonic cram sheet are available below.</p></div>' : "",
+      accessBanner,
       '<div class="education-stats">',
       '<span><strong>' + sections.length + '</strong> sections</span>',
       '<span><strong>' + sections.length * FREE_LIMIT + '</strong> free questions</span>',
@@ -633,7 +828,7 @@
         })
         .join(""),
       '</div>',
-      '<aside class="ad-slot education-ad" aria-label="Reserved advertising placement"><span>AdSense placement reserved</span><small>Keep ads between study areas and away from answer buttons.</small></aside>',
+      '<aside class="ad-slot education-ad" aria-label="Advertisement"><span>Advertisement</span></aside>',
       '<div class="education-lock-row">',
       '<button class="locked-feature" data-action="' + (unlocked ? "mixed-practice" : "paywall") + '"><span>' + (unlocked ? "Unlocked" : "Locked") + '</span><strong>Mixed Practice</strong><small>All sections together, like the real exam.</small></button>',
       '<button class="locked-feature" data-action="' + (unlocked ? "mock-exam" : "paywall") + '"><span>' + (unlocked ? "Unlocked" : "Locked") + '</span><strong>Timed Mock Exam</strong><small>80-question pacing with pass-readiness scoring.</small></button>',
@@ -736,7 +931,7 @@
       '<h2>' + escapeHtml(session.name) + " Score: " + score + "/" + session.questions.length + "</h2>",
       isUnlocked()
         ? '<p>You finished this paid prep mode. Keep drilling missed questions, print the mnemonic sheet, or run another mixed practice set.</p>'
-        : '<p>You finished the free section practice. Full mixed practice, timed mock exams, saved account progress, missed-question drills, weak-area scoring, and the complete mnemonic cram sheet are locked behind the $19 full prep unlock.</p>',
+        : '<p>You finished the free section practice. Mixed practice, timed mock exams, saved progress, missed-question drills, weak-area scoring, and the complete mnemonic cram sheet are included in the $19 full prep unlock.</p>',
       '<div class="result-actions">' + (isUnlocked() ? '<button class="button" data-action="mixed-practice">Run Mixed Practice</button><button class="button secondary" data-action="cram-sheet">Open Mnemonic Sheet</button>' : '<button class="button" data-action="paywall">Unlock Full Exam Prep - $19</button>') + '<button class="button secondary" data-action="dashboard">Choose Another Section</button></div>',
       missed.length
         ? '<section class="missed-preview"><h3>Missed-question preview</h3>' +
@@ -815,7 +1010,6 @@
   }
 
   function renderToast(root, message) {
-    removePaywall(root);
     root.insertAdjacentHTML("beforeend", '<div class="education-toast" role="status">' + escapeHtml(message) + "</div>");
     window.setTimeout(function () {
       var toast = root.querySelector(".education-toast");
@@ -823,10 +1017,37 @@
     }, 1800);
   }
 
-  function renderPaywall(root) {
+  function renderAccessSuccess(root, payload) {
+    var codeBlock = payload.access_code
+      ? '<div class="access-code-box"><span>Your restore code</span><strong data-access-code>' +
+        escapeHtml(payload.access_code) +
+        '</strong><button class="button secondary" data-action="copy-code">Copy Code</button></div><p class="fine-print">Save this code. It lets you restore your $19 unlock on another browser with the same checkout email.</p>'
+      : '<p class="fine-print">Your unlock is active. If you already saved a restore code, keep it for another browser.</p>';
     root.insertAdjacentHTML(
       "beforeend",
-      '<div class="education-modal" role="dialog" aria-modal="true" aria-label="Unlock Full Exam Prep"><div class="education-modal-card"><button class="modal-close" data-action="close-paywall" aria-label="Close">Close</button><p class="eyebrow">Full Exam Prep</p><h2>Unlock the real test simulation.</h2><p>You have free section practice. The $19 unlock is for the tools candidates care about most when they are close to test day: mixed practice, timed mock exams, progress saving in this browser, missed-question review, weak-area scoring, and the full mnemonic cram sheet.</p><form class="unlock-form" data-unlock-form><label>Email for checkout<input name="email" type="email" autocomplete="email" required placeholder="you@example.com"></label><button class="button" type="submit">Continue to $19 Unlock</button></form><p class="fine-print">Secure Stripe checkout opens after you enter your email. Progress saving is browser-based for this launch version.</p></div></div>'
+      '<div class="education-modal" role="dialog" aria-modal="true" aria-label="Full Prep Unlocked"><div class="education-modal-card"><button class="modal-close" data-action="close-paywall" aria-label="Close">Close</button><p class="eyebrow">Payment verified</p><h2>Full prep is unlocked.</h2><p>Mixed practice, timed mock exams, missed-question review, weak-area scoring, saved progress, and the full mnemonic cram sheet are ready.</p>' +
+        codeBlock +
+        '<div class="result-actions"><button class="button" data-action="mixed-practice">Start Mixed Practice</button><button class="button secondary" data-action="dashboard">Dashboard</button></div></div></div>'
+    );
+  }
+
+  function renderPaywall(root, message) {
+    trackEvent("view_item", { item_variant: "full_prep_paywall" });
+    var pendingEmail = "";
+    try {
+      pendingEmail = localStorage.getItem(PENDING_EMAIL_KEY) || state.accessEmail || "";
+    } catch (error) {
+      pendingEmail = state.accessEmail || "";
+    }
+    root.insertAdjacentHTML(
+      "beforeend",
+      '<div class="education-modal" role="dialog" aria-modal="true" aria-label="Unlock Full Exam Prep"><div class="education-modal-card"><button class="modal-close" data-action="close-paywall" aria-label="Close">Close</button><p class="eyebrow">Full Exam Prep</p><h2>Unlock the real test simulation.</h2>' +
+        (message ? '<div class="form-message">' + escapeHtml(message) + "</div>" : "") +
+        '<p>You have free section practice. The $19 unlock adds the tools candidates care about close to test day: mixed practice, timed mock exams, saved progress, missed-question review, weak-area scoring, and the full mnemonic cram sheet.</p><form class="unlock-form" data-unlock-form><label>Email for checkout<input name="email" type="email" autocomplete="email" required placeholder="you@example.com" value="' +
+        escapeHtml(pendingEmail) +
+        '"></label><button class="button" type="submit">Continue to Secure Stripe Checkout - $19</button></form><div class="restore-divider"><span>Already paid?</span></div><form class="unlock-form restore-form" data-restore-form><label>Email used at checkout<input name="email" type="email" autocomplete="email" required placeholder="you@example.com" value="' +
+        escapeHtml(pendingEmail) +
+        '"></label><label>Restore code<input name="access_code" type="text" autocomplete="off" required placeholder="BRQ-XXXX-XXXX-XXXX"></label><button class="button secondary" type="submit">Restore Full Prep</button></form><p class="fine-print">Checkout is handled by Stripe. After payment, BriqueRealty verifies the Stripe session and issues a restore code for this one-time unlock.</p></div></div>'
     );
   }
 
@@ -891,11 +1112,26 @@
     }
     if (name === "save-progress") {
       saveProgress();
-      renderToast(root, "Progress saved in this browser.");
+      renderToast(root, isUnlocked() ? "Progress saved and syncing." : "Progress saved in this browser.");
     }
     if (name === "paywall") {
       removePaywall(root);
       renderPaywall(root);
+    }
+    if (name === "show-access-code") {
+      removePaywall(root);
+      renderAccessSuccess(root, { access_code: state.accessCode });
+    }
+    if (name === "copy-code") {
+      var code = root.querySelector("[data-access-code]");
+      if (code && navigator.clipboard) {
+        navigator.clipboard.writeText(code.textContent || "");
+        renderToast(root, "Access code copied.");
+      }
+    }
+    if (name === "sync-progress") {
+      saveProgress();
+      renderToast(root, "Progress sync started.");
     }
     if (name === "close-paywall") {
       removePaywall(root);
@@ -904,8 +1140,31 @@
 
   function handleSubmit(root, event) {
     var form = event.target.closest("[data-unlock-form]");
-    if (!form) return;
+    var restoreForm = event.target.closest("[data-restore-form]");
+    if (!form && !restoreForm) return;
     event.preventDefault();
+
+    if (restoreForm) {
+      var restoreEmail = restoreForm.elements.email.value.trim();
+      var accessCode = restoreForm.elements.access_code.value.trim();
+      restoreForm.querySelector("button").disabled = true;
+      apiPost("/restore", { email: restoreEmail, access_code: accessCode })
+        .then(function (payload) {
+          storeAccess(Object.assign({}, payload, { access_code: accessCode }));
+          removePaywall(root);
+          loadCloudProgress(root);
+          renderDashboard(root);
+          renderAccessSuccess(root, { access_code: state.accessCode });
+        })
+        .catch(function () {
+          restoreForm.querySelector("button").disabled = false;
+          var existing = restoreForm.querySelector(".form-message");
+          if (existing) existing.remove();
+          restoreForm.insertAdjacentHTML("afterbegin", '<div class="form-message">That email and restore code did not match. Check your Stripe receipt email and saved code.</div>');
+        });
+      return;
+    }
+
     var email = form.elements.email.value.trim();
     try {
       localStorage.setItem(PENDING_EMAIL_KEY, email);
@@ -913,6 +1172,7 @@
       return;
     }
     if (CHECKOUT_URL) {
+      trackEvent("begin_checkout", { item_variant: "full_prep_checkout" });
       window.location.href = checkoutUrl(email);
       return;
     }
@@ -922,7 +1182,10 @@
   function initOne(root) {
     if (root.getAttribute("data-education-ready") === "true") return;
     root.setAttribute("data-education-ready", "true");
+    loadStoredAccess();
     renderDashboard(root);
+    var hasCheckoutReturn = hydratePaidUnlockFromUrl(root);
+    if (!hasCheckoutReturn) verifyStoredAccess(root);
     root.addEventListener("click", function (event) {
       handleClick(root, event);
     });
@@ -932,7 +1195,6 @@
   }
 
   function init() {
-    hydratePaidUnlockFromUrl();
     document.querySelectorAll("[data-education-app]").forEach(initOne);
   }
 

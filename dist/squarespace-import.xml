@@ -136,7 +136,7 @@
     <div class="hero-copy">
       <p class="eyebrow">National real estate exam prep</p>
       <h1>Real Estate License Exam Prep</h1>
-      <p>Practice national real estate salesperson exam topics by section for free, then unlock mixed practice, timed mock exams, browser progress saving, missed-question review, and full mnemonic cram sheets for $19.</p>
+      <p>Practice national real estate salesperson exam topics by section for free, then unlock mixed practice, timed mock exams, saved progress, missed-question review, and full mnemonic cram sheets for $19.</p>
       <div class="actions"><a class="button " href="#practice">Start Free Practice</a><a class="button secondary" href="#full-exam-prep">Unlock Full Prep - $19</a></div>
     </div>
     <figure class="hero-image">
@@ -154,12 +154,11 @@
       <article>
         <p class="eyebrow">AdSense-ready layout</p>
         <h2>Useful public content first.</h2>
-        <p>Public study notes, section explanations, and reserved ad placements sit away from quiz buttons and account/payment prompts. The paid tier stays simple: one $19 unlock for the serious prep tools.</p>
+        <p>Public study notes, section explanations, and ad space sit away from quiz buttons and checkout prompts. The paid tier stays simple: one $19 unlock for the serious prep tools.</p>
       </article>
     </div>
-    <aside class="ad-slot" aria-label="Reserved advertising placement">
-      <span>AdSense placement reserved</span>
-      <small>Ads should appear between study blocks, not inside answer choices or checkout prompts.</small>
+    <aside class="ad-slot" aria-label="Advertisement">
+      <span>Advertisement</span>
     </aside>
   </section>
   <section id="practice" class="education-shell" data-education-app>
@@ -194,7 +193,7 @@
         <ul>
           <li>Mixed practice across all sections</li>
           <li>Timed mock exam mode</li>
-          <li>Progress saving in this browser</li>
+          <li>Saved progress with restore access</li>
           <li>Missed-question review</li>
           <li>Weak-area dashboard</li>
           <li>Full mnemonic cram sheet</li>

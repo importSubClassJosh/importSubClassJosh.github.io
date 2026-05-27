@@ -539,14 +539,17 @@ figcaption {
   padding: 1rem;
   border: 1px dashed rgba(181, 138, 58, 0.7);
   border-radius: 8px;
-  background: rgba(255, 253, 248, 0.72);
+  background: rgba(255, 253, 248, 0.48);
   color: var(--muted);
   text-align: center;
 }
 
 .ad-slot span {
-  color: var(--charcoal);
+  color: var(--muted);
+  font-size: 0.72rem;
   font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
 }
 
 .education-shell {
@@ -885,6 +888,39 @@ figcaption {
   font: inherit;
 }
 
+.restore-divider {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin: 1rem 0 0.25rem;
+  color: var(--muted);
+  font-size: 0.78rem;
+  font-weight: 800;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+.restore-divider::before,
+.restore-divider::after {
+  content: "";
+  flex: 1;
+  border-top: 1px solid var(--line);
+}
+
+.restore-form {
+  margin-top: 0.75rem;
+}
+
+.form-message {
+  margin: 0.75rem 0;
+  padding: 0.75rem;
+  border: 1px solid rgba(95, 24, 40, 0.16);
+  border-radius: 8px;
+  background: #f8f0e5;
+  color: var(--merlot);
+  font-weight: 700;
+}
+
 .fine-print {
   color: var(--muted);
   font-size: 0.88rem;
@@ -899,6 +935,48 @@ figcaption {
 
 .dashboard-unlock {
   margin: 1rem 0;
+}
+
+.dashboard-unlock.is-warning {
+  border-color: rgba(181, 138, 58, 0.44);
+  background: #fff8e8;
+}
+
+.dashboard-unlock.is-checking {
+  background: #f8f0e5;
+}
+
+.access-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.65rem;
+  margin-top: 0.8rem;
+}
+
+.access-code-box {
+  display: grid;
+  gap: 0.4rem;
+  margin: 1rem 0;
+  padding: 1rem;
+  border: 1px solid rgba(181, 138, 58, 0.52);
+  border-radius: 8px;
+  background: #f8f0e5;
+}
+
+.access-code-box span {
+  color: var(--muted);
+  font-size: 0.76rem;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.access-code-box strong {
+  color: var(--merlot);
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: clamp(1rem, 4vw, 1.45rem);
+  letter-spacing: 0.03em;
+  overflow-wrap: anywhere;
 }
 
 .timer-pill {

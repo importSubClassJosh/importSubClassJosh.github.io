@@ -851,7 +851,7 @@ function renderEducation() {
     eyebrow: "National real estate exam prep",
     title: "Real Estate License Exam Prep",
     text:
-      "Practice national real estate salesperson exam topics by section for free, then unlock mixed practice, timed mock exams, browser progress saving, missed-question review, and full mnemonic cram sheets for $19.",
+      "Practice national real estate salesperson exam topics by section for free, then unlock mixed practice, timed mock exams, saved progress, missed-question review, and full mnemonic cram sheets for $19.",
     image: "resource-center-banner.png",
     actions: [
       { href: "#practice", label: "Start Free Practice" },
@@ -868,12 +868,11 @@ function renderEducation() {
       <article>
         <p class="eyebrow">AdSense-ready layout</p>
         <h2>Useful public content first.</h2>
-        <p>Public study notes, section explanations, and reserved ad placements sit away from quiz buttons and account/payment prompts. The paid tier stays simple: one $19 unlock for the serious prep tools.</p>
+        <p>Public study notes, section explanations, and ad space sit away from quiz buttons and checkout prompts. The paid tier stays simple: one $19 unlock for the serious prep tools.</p>
       </article>
     </div>
-    <aside class="ad-slot" aria-label="Reserved advertising placement">
-      <span>AdSense placement reserved</span>
-      <small>Ads should appear between study blocks, not inside answer choices or checkout prompts.</small>
+    <aside class="ad-slot" aria-label="Advertisement">
+      <span>Advertisement</span>
     </aside>
   </section>
   <section id="practice" class="education-shell" data-education-app>
@@ -908,7 +907,7 @@ function renderEducation() {
         <ul>
           <li>Mixed practice across all sections</li>
           <li>Timed mock exam mode</li>
-          <li>Progress saving in this browser</li>
+          <li>Saved progress with restore access</li>
           <li>Missed-question review</li>
           <li>Weak-area dashboard</li>
           <li>Full mnemonic cram sheet</li>
