@@ -747,6 +747,43 @@ figcaption {
   gap: 0.7rem;
 }
 
+.state-picker-card {
+  margin: 1rem 0;
+  border-color: rgba(181, 138, 58, 0.34);
+  background:
+    linear-gradient(135deg, rgba(255, 253, 248, 0.98), rgba(248, 240, 229, 0.98)),
+    var(--paper);
+}
+
+.state-picker-label {
+  display: grid;
+  gap: 0.45rem;
+  color: var(--charcoal);
+  font-weight: 800;
+}
+
+.state-picker-label select {
+  width: min(100%, 360px);
+  min-height: 46px;
+  padding: 0.65rem 0.75rem;
+  border: 1px solid rgba(95, 24, 40, 0.2);
+  border-radius: 6px;
+  background: #fffdf8;
+  color: var(--charcoal);
+  font: inherit;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.86);
+}
+
+.state-picker-card .education-card-footer {
+  align-items: flex-end;
+}
+
+.state-picker-card .education-card-footer span {
+  max-width: 560px;
+  color: var(--muted);
+  font-size: 0.92rem;
+}
+
 .education-stats {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));

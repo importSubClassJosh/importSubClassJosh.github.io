@@ -1,6 +1,10 @@
 (function () {
   var FREE_LIMIT = 25;
+  var STATE_POOL_MULTIPLIER = 6;
+  var PASS_CONFIDENCE_GOAL = 90;
+  var DEFAULT_STATE_CODE = "GA";
   var STORAGE_KEY = "brqEducationProgress";
+  var STATE_CHOICE_KEY = "brqEducationStateCode";
   var ACCESS_TOKEN_KEY = "brqEducationAccessToken";
   var ACCESS_EMAIL_KEY = "brqEducationAccessEmail";
   var ACCESS_CODE_KEY = "brqEducationAccessCode";
@@ -14,7 +18,7 @@
     url.searchParams.set("client_reference_id", checkoutReferenceId());
     url.searchParams.set("utm_source", "briquerealty");
     url.searchParams.set("utm_medium", "education_page");
-    url.searchParams.set("utm_campaign", "national_exam_prep");
+    url.searchParams.set("utm_campaign", "all_state_exam_prep");
     return url.href;
   }
 
@@ -39,8 +43,8 @@
     var payload = Object.assign(
       {
         event_category: "education_exam_prep",
-        item_id: "national_exam_prep_full",
-        item_name: "BriqueRealty Full Exam Prep",
+        item_id: "all_state_exam_prep_full",
+        item_name: "BriqueRealty All-State Full Exam Prep",
         currency: "USD",
         value: 19
       },
@@ -64,6 +68,273 @@
       memory: memory
     };
   }
+
+  function profile(code, name, examQuestions, nationalQuestions, stateQuestions) {
+    return {
+      code: code,
+      name: name,
+      examQuestions: examQuestions,
+      nationalQuestions: nationalQuestions,
+      stateQuestions: stateQuestions
+    };
+  }
+
+  var stateProfiles = [
+    profile("AL", "Alabama", 120, 80, 40),
+    profile("AK", "Alaska", 120, 80, 40),
+    profile("AZ", "Arizona", 190, 80, 110),
+    profile("AR", "Arkansas", 120, 80, 40),
+    profile("CA", "California", 150, 100, 50),
+    profile("CO", "Colorado", 154, 80, 74),
+    profile("CT", "Connecticut", 120, 80, 40),
+    profile("DE", "Delaware", 120, 80, 40),
+    profile("DC", "District of Columbia", 110, 80, 30),
+    profile("FL", "Florida", 100, 70, 30),
+    profile("GA", "Georgia", 152, 100, 52),
+    profile("HI", "Hawaii", 130, 80, 50),
+    profile("ID", "Idaho", 120, 80, 40),
+    profile("IL", "Illinois", 140, 100, 40),
+    profile("IN", "Indiana", 120, 80, 40),
+    profile("IA", "Iowa", 120, 80, 40),
+    profile("KS", "Kansas", 110, 80, 30),
+    profile("KY", "Kentucky", 120, 80, 40),
+    profile("LA", "Louisiana", 135, 80, 55),
+    profile("ME", "Maine", 120, 80, 40),
+    profile("MD", "Maryland", 110, 80, 30),
+    profile("MA", "Massachusetts", 120, 80, 40),
+    profile("MI", "Michigan", 115, 80, 35),
+    profile("MN", "Minnesota", 120, 80, 40),
+    profile("MS", "Mississippi", 120, 80, 40),
+    profile("MO", "Missouri", 140, 100, 40),
+    profile("MT", "Montana", 113, 80, 33),
+    profile("NE", "Nebraska", 120, 80, 40),
+    profile("NV", "Nevada", 120, 80, 40),
+    profile("NH", "New Hampshire", 120, 80, 40),
+    profile("NJ", "New Jersey", 110, 80, 30),
+    profile("NM", "New Mexico", 130, 80, 50),
+    profile("NY", "New York", 75, 55, 20),
+    profile("NC", "North Carolina", 120, 80, 40),
+    profile("ND", "North Dakota", 120, 80, 40),
+    profile("OH", "Ohio", 120, 80, 40),
+    profile("OK", "Oklahoma", 120, 80, 40),
+    profile("OR", "Oregon", 130, 80, 50),
+    profile("PA", "Pennsylvania", 120, 80, 40),
+    profile("RI", "Rhode Island", 120, 80, 40),
+    profile("SC", "South Carolina", 120, 80, 40),
+    profile("SD", "South Dakota", 120, 80, 40),
+    profile("TN", "Tennessee", 120, 80, 40),
+    profile("TX", "Texas", 110, 80, 30),
+    profile("UT", "Utah", 130, 80, 50),
+    profile("VT", "Vermont", 120, 80, 40),
+    profile("VA", "Virginia", 120, 80, 40),
+    profile("WA", "Washington", 110, 80, 30),
+    profile("WV", "West Virginia", 120, 80, 40),
+    profile("WI", "Wisconsin", 120, 80, 40),
+    profile("WY", "Wyoming", 120, 80, 40)
+  ];
+
+  var stateQuestionBlueprints = [
+    {
+      topic: "Licensing Authority",
+      prompt: function (stateName) { return "Before relying on a practice answer about license eligibility in " + stateName + ", what should a candidate verify first?"; },
+      correct: function (stateName) { return "The current " + stateName + " candidate bulletin, license law, and commission rules."; },
+      wrong: ["Only a national vocabulary list.", "Only a brokerage recruiting page.", "Only a sample answer from another state."],
+      explanation: function (stateName) { return stateName + " state-law questions can change when rules, forms, or candidate bulletins change, so the current state source controls."; },
+      memory: "State law starts with the current state source."
+    },
+    {
+      topic: "Activities Requiring a License",
+      prompt: function (stateName) { return "A person in " + stateName + " negotiates listing terms for another owner for compensation. What issue is being tested?"; },
+      correct: function () { return "Whether the activity requires a real estate license."; },
+      wrong: ["Whether the property has a metes-and-bounds description.", "Whether the buyer is using FHA financing.", "Whether the deed has already been recorded."],
+      explanation: function () { return "Negotiating real estate terms for another person for compensation is the classic fact pattern for a licensure question."; },
+      memory: "For another plus for pay usually means license issue."
+    },
+    {
+      topic: "Exemptions",
+      prompt: function (stateName) { return "Which " + stateName + " exam answer is safest when an unlicensed person claims an exemption?"; },
+      correct: function () { return "Check whether a specific statutory exemption applies to that exact activity."; },
+      wrong: ["Assume every employee is exempt.", "Assume no owner can sell their own property.", "Assume advertising creates an automatic exemption."],
+      explanation: function () { return "Exemptions are narrow. The facts must match the exemption instead of relying on a broad assumption."; },
+      memory: "Exemptions are exact, not elastic."
+    },
+    {
+      topic: "Broker Supervision",
+      prompt: function (stateName) { return "A new " + stateName + " salesperson prepares advertising and contract paperwork. Who is most likely responsible for supervision?"; },
+      correct: function () { return "The sponsoring or responsible broker."; },
+      wrong: ["The county tax assessor.", "The buyer's lender.", "The title insurance underwriter."],
+      explanation: function () { return "State exams commonly test that salespersons operate under broker supervision."; },
+      memory: "Salesperson activity sits under broker supervision."
+    },
+    {
+      topic: "Advertising",
+      prompt: function (stateName) { return "A " + stateName + " licensee posts a listing ad that hides the broker relationship. What is the primary state-law risk?"; },
+      correct: function () { return "Improper or misleading real estate advertising."; },
+      wrong: ["A rectangular survey error.", "A mortgage acceleration clause.", "A prorated tax debit."],
+      explanation: function () { return "Advertising rules commonly require truthful presentation and proper brokerage identification."; },
+      memory: "Ads must tell the truth and identify the business."
+    },
+    {
+      topic: "Agency Disclosure",
+      prompt: function (stateName) { return "A buyer first starts sharing confidential motivation with a " + stateName + " agent. What topic should the agent be thinking about?"; },
+      correct: function () { return "Required agency disclosure and the duties owed to that consumer."; },
+      wrong: ["Only the property's assessed value.", "Only whether the appraiser is licensed.", "Only the survey method."],
+      explanation: function () { return "Agency disclosure questions test when relationships and duties must be explained to consumers."; },
+      memory: "Confidential talk means agency duties matter."
+    },
+    {
+      topic: "Dual Agency",
+      prompt: function (stateName) { return "A " + stateName + " brokerage may represent both sides only if state rules allow it and what else is usually required?"; },
+      correct: function () { return "Proper disclosure and informed written consent when required."; },
+      wrong: ["A promise that price will increase.", "A waiver of all fair housing laws.", "A verbal agreement after closing only."],
+      explanation: function () { return "Dual-agency style questions focus on consent, disclosure, and limits on loyalty and confidentiality."; },
+      memory: "Two sides need clear consent."
+    },
+    {
+      topic: "Transaction Brokerage",
+      prompt: function (stateName) { return "If " + stateName + " law recognizes a non-agency or transaction-broker role, what should a licensee do before acting in that role?"; },
+      correct: function () { return "Follow the state's required disclosure and relationship rules."; },
+      wrong: ["Give legal advice to both parties.", "Ignore all confidentiality duties.", "Treat every consumer as a client automatically."],
+      explanation: function () { return "Some states have transaction brokerage or similar roles, but the state-specific disclosure framework controls."; },
+      memory: "Relationship labels are state labels."
+    },
+    {
+      topic: "Listing Agreements",
+      prompt: function (stateName) { return "A listing agreement in " + stateName + " is missing a required term. What is the best exam instinct?"; },
+      correct: function () { return "Check state contract and brokerage rules before relying on the agreement."; },
+      wrong: ["Assume the MLS fixes every missing term.", "Assume oral terms always override the writing.", "Assume the buyer's lender decides the listing terms."],
+      explanation: function () { return "Listing rules often test required signatures, dates, compensation terms, brokerage identity, and expiration language."; },
+      memory: "Listings need the state's required pieces."
+    },
+    {
+      topic: "Purchase Contracts",
+      prompt: function (stateName) { return "A " + stateName + " buyer changes price after the seller accepts. What document concept is most likely tested?"; },
+      correct: function () { return "An amendment or new offer/counteroffer, depending on timing and consent."; },
+      wrong: ["Escheat.", "Accretion.", "A property tax millage rate."],
+      explanation: function () { return "State contract questions often test how offers, counteroffers, amendments, and addenda change obligations."; },
+      memory: "Changed deal terms need changed paperwork."
+    },
+    {
+      topic: "Earnest Money",
+      prompt: function (stateName) { return "A " + stateName + " licensee receives earnest money. What is the safest state-exam answer?"; },
+      correct: function () { return "Handle, deposit, and account for it exactly as state rules and the contract require."; },
+      wrong: ["Hold it personally until after closing.", "Use it to pay marketing expenses.", "Release it based only on a text from one party."],
+      explanation: function () { return "Trust-money questions test timely deposit, proper account handling, written instructions, and dispute rules."; },
+      memory: "Trust money is not the agent's money."
+    },
+    {
+      topic: "Trust Accounts",
+      prompt: function (stateName) { return "Commingling client money with operating funds in " + stateName + " usually points to what violation?"; },
+      correct: function () { return "Improper trust-account handling."; },
+      wrong: ["A zoning variance.", "A legal description correction.", "A loan-to-value calculation."],
+      explanation: function () { return "Trust-account handling is a high-frequency state-law topic because it protects consumer funds."; },
+      memory: "Client funds stay separate."
+    },
+    {
+      topic: "Disclosure Duties",
+      prompt: function (stateName) { return "A seller tells the " + stateName + " licensee about a hidden material defect. What is the best exam answer?"; },
+      correct: function () { return "Follow state disclosure law and do not misrepresent or conceal material facts."; },
+      wrong: ["Hide it if the buyer does not ask.", "Disclose only after the deed records.", "Convert it into a commission credit."],
+      explanation: function () { return "State and national questions both punish concealment and misrepresentation of material facts."; },
+      memory: "Material means mention, not mask."
+    },
+    {
+      topic: "Lead-Based Paint",
+      prompt: function (stateName) { return "A pre-1978 residential sale in " + stateName + " triggers which federal disclosure topic?"; },
+      correct: function () { return "Lead-based paint disclosure requirements."; },
+      wrong: ["A homestead exemption application.", "A subdivision plat approval.", "A rent roll reconciliation."],
+      explanation: function () { return "Lead disclosure is federal, but state exam questions often combine it with state forms and transaction duties."; },
+      memory: "Pre-1978 means lead disclosure."
+    },
+    {
+      topic: "Fair Housing",
+      prompt: function (stateName) { return "A landlord in " + stateName + " refuses a qualified applicant because of familial status. What is the tested issue?"; },
+      correct: function () { return "Fair housing discrimination."; },
+      wrong: ["A bilateral contract mistake.", "A tax proration issue.", "A fixture classification issue."],
+      explanation: function () { return "Fair housing applies nationwide, and state exams may add state or local protected classes."; },
+      memory: "Protected class equals protected choice."
+    },
+    {
+      topic: "Antitrust",
+      prompt: function (stateName) { return "Several " + stateName + " brokers agree to charge the same commission rate. What topic is tested?"; },
+      correct: function () { return "Antitrust price-fixing risk."; },
+      wrong: ["Adverse possession.", "Depreciation recapture.", "Mortgage subordination only."],
+      explanation: function () { return "Competitors cannot agree to set fees, divide markets, or boycott competitors."; },
+      memory: "Competitors do not coordinate commissions."
+    },
+    {
+      topic: "Property Management",
+      prompt: function (stateName) { return "A " + stateName + " property manager collects rents and security deposits for an owner. What should the candidate watch for?"; },
+      correct: function () { return "Licensing, trust-account, lease, and deposit-handling rules."; },
+      wrong: ["Only the square footage formula.", "Only the deed covenant type.", "Only the title insurance premium."],
+      explanation: function () { return "Property-management questions often blend licensing, funds, leasing, and owner authority."; },
+      memory: "Management means money, leases, and authority."
+    },
+    {
+      topic: "Security Deposits",
+      prompt: function (stateName) { return "A rental security deposit dispute in " + stateName + " is most likely controlled by what?"; },
+      correct: function () { return "State landlord-tenant law and the lease terms."; },
+      wrong: ["Only the lender's note rate.", "Only the county's zoning map.", "Only the broker's personal preference."],
+      explanation: function () { return "Security-deposit timelines, notices, deductions, and account rules are state-specific."; },
+      memory: "Deposit rules live in state landlord-tenant law."
+    },
+    {
+      topic: "Records",
+      prompt: function (stateName) { return "A " + stateName + " brokerage is asked to produce transaction records. What state-law concept is being tested?"; },
+      correct: function () { return "Required record retention and inspection rules."; },
+      wrong: ["A riparian-rights calculation.", "A gross lease expense stop.", "A deed restriction color palette."],
+      explanation: function () { return "Most state exams test how long brokers must keep records and when regulators can inspect them."; },
+      memory: "Records must remain reachable."
+    },
+    {
+      topic: "Discipline",
+      prompt: function (stateName) { return "A " + stateName + " licensee is accused of fraud or dishonest dealing. Which power is usually involved?"; },
+      correct: function () { return "Regulatory discipline against a real estate license."; },
+      wrong: ["A deed's habendum clause.", "A township-range correction.", "An amortization schedule."],
+      explanation: function () { return "State licensing bodies can discipline licensees for violations such as fraud, misrepresentation, or trust-money abuse."; },
+      memory: "Bad acts can cost the license."
+    },
+    {
+      topic: "Recovery Funds",
+      prompt: function (stateName) { return "If " + stateName + " has a real estate recovery fund, what is its general purpose?"; },
+      correct: function () { return "To compensate eligible consumers for certain licensee misconduct when statutory requirements are met."; },
+      wrong: ["To guarantee every buyer a profit.", "To pay all property taxes.", "To replace title insurance."],
+      explanation: function () { return "Recovery-fund questions are state-specific, so candidates should know whether their state has one and how claims work."; },
+      memory: "Recovery funds recover limited consumer losses."
+    },
+    {
+      topic: "Closing and Settlement",
+      prompt: function (stateName) { return "A " + stateName + " closing statement prorates taxes and HOA dues. What skill is being tested?"; },
+      correct: function () { return "Settlement math and debit-credit logic."; },
+      wrong: ["Only agency disclosure.", "Only adverse possession.", "Only zoning appeals."],
+      explanation: function () { return "State exams often combine local closing custom with national debit, credit, and proration logic."; },
+      memory: "Closing math sorts who owes what."
+    },
+    {
+      topic: "Transfer Taxes",
+      prompt: function (stateName) { return "A deed transfer in " + stateName + " may require a tax, stamp, or recording fee. What should a candidate do?"; },
+      correct: function () { return "Apply the state's transfer and recording rules shown in the current outline."; },
+      wrong: ["Ignore all fees because deeds are free to record.", "Use another state's rate automatically.", "Treat it as a commission split."],
+      explanation: function () { return "Transfer taxes and recording costs are state or local details, so the current state rule matters."; },
+      memory: "Transfer costs travel by state."
+    },
+    {
+      topic: "Forms and Addenda",
+      prompt: function (stateName) { return "A required " + stateName + " disclosure addendum is missing from a transaction file. What is the best answer?"; },
+      correct: function () { return "Correct the file according to state rules and brokerage supervision requirements."; },
+      wrong: ["Assume closing cures every form problem.", "Delete the transaction record.", "Ask the appraiser to rewrite the contract."],
+      explanation: function () { return "State form questions test required notices, signatures, timing, and broker file compliance."; },
+      memory: "Missing state forms need state-rule fixes."
+    },
+    {
+      topic: "Exam Strategy",
+      prompt: function (stateName) { return "A " + stateName + " candidate scores 90% or better on repeated state-mode practice. What does that usually signal?"; },
+      correct: function () { return "A stronger readiness margin than simply aiming for the minimum passing line."; },
+      wrong: ["A guaranteed license with no official exam required.", "Permission to ignore the candidate bulletin.", "No need to review missed questions."],
+      explanation: function () { return "The 90% goal is a readiness target, not a guarantee. It builds margin above typical pass thresholds."; },
+      memory: "Aim above the line, then keep the margin."
+    }
+  ];
 
   var sections = [
     {
@@ -455,8 +726,17 @@
     accessToken: "",
     accessCode: "",
     accessMessage: "",
-    progressSyncStatus: ""
+    progressSyncStatus: "",
+    selectedStateCode: loadStateChoice()
   };
+
+  function loadStateChoice() {
+    try {
+      return localStorage.getItem(STATE_CHOICE_KEY) || DEFAULT_STATE_CODE;
+    } catch (error) {
+      return DEFAULT_STATE_CODE;
+    }
+  }
 
   function loadProgress() {
     try {
@@ -661,6 +941,66 @@
     }, []);
   }
 
+  function formatNumber(value) {
+    return String(value).replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+  }
+
+  function selectedStateProfile() {
+    return (
+      stateProfiles.find(function (item) {
+        return item.code === state.selectedStateCode;
+      }) || stateProfiles.find(function (item) {
+        return item.code === DEFAULT_STATE_CODE;
+      })
+    );
+  }
+
+  function statePoolTarget(profile) {
+    return profile.examQuestions * STATE_POOL_MULTIPLIER;
+  }
+
+  function stateQuestionItems(profile) {
+    if (profile.questions) return profile.questions;
+    var target = statePoolTarget(profile);
+    profile.questions = Array.from({ length: target }, function (_, index) {
+      var blueprint = stateQuestionBlueprints[index % stateQuestionBlueprints.length];
+      var cycle = Math.floor(index / stateQuestionBlueprints.length) + 1;
+      var stateName = profile.name;
+      var promptText =
+        stateName +
+        " state law drill " +
+        (index + 1) +
+        " - " +
+        blueprint.topic +
+        ": " +
+        blueprint.prompt(stateName, cycle);
+      var correctText = typeof blueprint.correct === "function" ? blueprint.correct(stateName, cycle) : blueprint.correct;
+      var explanationText = typeof blueprint.explanation === "function" ? blueprint.explanation(stateName, cycle) : blueprint.explanation;
+      return Object.assign(
+        {
+          sectionName: stateName + " State Law",
+          sourceSectionId: "state-" + profile.code.toLowerCase(),
+          stateCode: profile.code,
+          topic: blueprint.topic
+        },
+        q(promptText, correctText, blueprint.wrong, explanationText, blueprint.memory)
+      );
+    });
+    return profile.questions;
+  }
+
+  function allPracticeItems() {
+    return allQuestionItems().concat(stateQuestionItems(selectedStateProfile()));
+  }
+
+  function stateOptionsHtml(selectedCode) {
+    return stateProfiles
+      .map(function (profile) {
+        return '<option value="' + profile.code + '"' + (profile.code === selectedCode ? " selected" : "") + ">" + escapeHtml(profile.name) + "</option>";
+      })
+      .join("");
+  }
+
   function shuffled(items) {
     return items
       .map(function (item) {
@@ -699,19 +1039,33 @@
   }
 
   function startMixedPractice(root) {
+    var profile = selectedStateProfile();
     startSession(root, {
       type: "mixed",
-      name: "Mixed Practice",
-      questions: shuffled(allQuestionItems()).slice(0, 50),
+      name: profile.name + " Mixed Practice",
+      questions: shuffled(allPracticeItems()).slice(0, 50),
+      timed: false
+    });
+  }
+
+  function startStatePractice(root) {
+    var profile = selectedStateProfile();
+    startSession(root, {
+      type: "state",
+      sectionId: "state-" + profile.code.toLowerCase(),
+      name: profile.name + " State Law Drill",
+      questions: shuffled(stateQuestionItems(profile)).slice(0, 50),
       timed: false
     });
   }
 
   function startMockExam(root) {
+    var profile = selectedStateProfile();
     startSession(root, {
       type: "mock",
-      name: "Timed Mock Exam",
-      questions: shuffled(allQuestionItems()).slice(0, 80),
+      sectionId: "state-" + profile.code.toLowerCase(),
+      name: profile.name + " 90% Readiness Exam",
+      questions: shuffled(allPracticeItems()).slice(0, profile.examQuestions),
       timed: true
     });
   }
@@ -773,12 +1127,14 @@
   function renderDashboard(root) {
     var unlocked = isUnlocked();
     var checking = state.accessStatus === "checking";
+    var profile = selectedStateProfile();
+    var statePoolSize = statePoolTarget(profile);
     var accessBanner = "";
     if (checking) {
       accessBanner = '<div class="unlock-confirm dashboard-unlock is-checking"><h3>Checking access...</h3><p>' + escapeHtml(state.accessMessage || "Verifying your full-prep unlock.") + "</p></div>";
     } else if (unlocked) {
       accessBanner =
-        '<div class="unlock-confirm dashboard-unlock"><h3>Full prep unlocked.</h3><p>Mixed practice, timed mock exams, missed-question review, cloud-synced progress, and the full mnemonic cram sheet are available.' +
+        '<div class="unlock-confirm dashboard-unlock"><h3>Full prep unlocked.</h3><p>All-state practice, mixed practice, timed readiness exams, missed-question review, cloud-synced progress, and the full mnemonic cram sheet are available.' +
         (state.accessEmail ? " Signed in as " + escapeHtml(state.accessEmail) + "." : "") +
         (state.progressSyncStatus ? " " + escapeHtml(state.progressSyncStatus) : "") +
         '</p><div class="access-actions"><button class="button secondary" data-action="show-access-code">Access Code</button><button class="button secondary" data-action="sync-progress">Sync Progress</button></div></div>';
@@ -788,13 +1144,24 @@
     root.innerHTML = [
       '<div class="education-app">',
       '<div class="education-topbar">',
-      '<div class="education-dashboard-copy"><p class="eyebrow">Practice dashboard</p><h2>Pick a national exam section.</h2><p>Every section has 25 free questions. The $19 full prep unlock adds the test-day tools: mixed practice, timed mock exams, saved progress, missed-question review, and the full mnemonic cram sheet.</p></div>',
+      '<div class="education-dashboard-copy"><p class="eyebrow">Practice dashboard</p><h2>Pick your state, then train past the pass line.</h2><p>Every national section still has 25 free questions. The $19 full prep unlock adds all-state law drills, 6x exam-size question pools, timed readiness exams, saved progress, missed-question review, and the full mnemonic cram sheet. If you can keep scoring 90%+ here, you are practicing with the kind of margin that makes the real exam feel familiar.</p></div>',
       '<div class="education-actions">',
       '<button class="button" data-action="' + (unlocked ? "mixed-practice" : "paywall") + '"' + (checking ? " disabled" : "") + '>Mixed Practice</button>',
       '<button class="button secondary" data-action="' + (unlocked ? "mock-exam" : "paywall") + '"' + (checking ? " disabled" : "") + ">Mock Exam</button>",
       '</div>',
       '</div>',
       accessBanner,
+      '<div class="education-stats">',
+      '<span><strong>' + stateProfiles.length + '</strong><small>state exams</small></span>',
+      '<span><strong>6x</strong><small>exam-size pools</small></span>',
+      '<span><strong>' + PASS_CONFIDENCE_GOAL + '%+</strong><small>readiness target</small></span>',
+      '</div>',
+      '<article class="education-section-card state-picker-card">',
+      '<div class="education-section-copy"><span class="education-weight">All-state mode</span><h3>' + escapeHtml(profile.name) + ' exam prep</h3><p>Pull from ' + formatNumber(statePoolSize) + ' ' + escapeHtml(profile.name) + ' state-law practice questions, built at 6x the ' + profile.examQuestions + '-question exam target. Drill until 90%+ is repeatable, then sit for the actual exam with more margin.</p></div>',
+      '<label class="state-picker-label">Choose your state exam<select data-state-select aria-label="Choose state exam">' + stateOptionsHtml(profile.code) + '</select></label>',
+      '<div class="education-topic-row"><span>' + profile.examQuestions + ' exam questions</span><span>' + formatNumber(statePoolSize) + ' practice pool</span><span>' + PASS_CONFIDENCE_GOAL + '%+ goal</span></div>',
+      '<div class="education-card-footer"><span>State drills and readiness exams unlock with full prep.</span><button class="button secondary" data-action="' + (unlocked ? "state-practice" : "paywall") + '"' + (checking ? " disabled" : "") + '>State Drill</button><button class="button" data-action="' + (unlocked ? "mock-exam" : "paywall") + '"' + (checking ? " disabled" : "") + '>Start Readiness Exam</button></div>',
+      '</article>',
       '<div class="education-stats">',
       '<span><strong>' + sections.length + '</strong><small>national sections</small></span>',
       '<span><strong>' + sections.length * FREE_LIMIT + '</strong><small>free questions</small></span>',
@@ -828,10 +1195,11 @@
         })
         .join(""),
       '</div>',
-      '<aside class="ad-slot education-ad" aria-label="Advertisement"><span>Advertisement</span></aside>',
+      '<aside class="monetag-inline-ad education-ad" data-monetag-inline-ad="education-dashboard" data-monetag-creative="https://importsubclassjosh.github.io/assets/images/monetag-real-estate-resource.jpg" data-monetag-zone="11121121" aria-label="Advertisement"><a href="https://omg10.com/4/11121121" target="_blank" rel="sponsored noopener noreferrer"><span class="monetag-inline-ad__art" aria-hidden="true"><img src="https://importsubclassjosh.github.io/assets/images/monetag-real-estate-resource.jpg" width="900" height="375" alt="" loading="lazy" decoding="async"></span><span class="monetag-inline-ad__copy"><span class="monetag-inline-ad__label">Advertisement</span><strong>Explore a useful real estate resource.</strong><span class="monetag-inline-ad__text">A sponsored pick for readers comparing guides, tools, education, and next steps.</span></span><span class="monetag-inline-ad__cta">See sponsor pick</span></a></aside>',
       '<div class="education-lock-row">',
-      '<button class="locked-feature" data-action="' + (unlocked ? "mixed-practice" : "paywall") + '"><span>' + (unlocked ? "Unlocked" : "Locked") + '</span><strong>Mixed Practice</strong><small>All sections together, like the real exam.</small></button>',
-      '<button class="locked-feature" data-action="' + (unlocked ? "mock-exam" : "paywall") + '"><span>' + (unlocked ? "Unlocked" : "Locked") + '</span><strong>Timed Mock Exam</strong><small>80-question pacing with pass-readiness scoring.</small></button>',
+      '<button class="locked-feature" data-action="' + (unlocked ? "state-practice" : "paywall") + '"><span>' + (unlocked ? "Unlocked" : "Locked") + '</span><strong>All-State Law Drills</strong><small>' + formatNumber(statePoolSize) + ' questions for ' + escapeHtml(profile.name) + ' alone.</small></button>',
+      '<button class="locked-feature" data-action="' + (unlocked ? "mixed-practice" : "paywall") + '"><span>' + (unlocked ? "Unlocked" : "Locked") + '</span><strong>Mixed Practice</strong><small>National plus ' + escapeHtml(profile.name) + ' state law together.</small></button>',
+      '<button class="locked-feature" data-action="' + (unlocked ? "mock-exam" : "paywall") + '"><span>' + (unlocked ? "Unlocked" : "Locked") + '</span><strong>90% Readiness Exam</strong><small>' + profile.examQuestions + '-question timed simulation with a 90%+ target.</small></button>',
       '<button class="locked-feature" data-action="' + (unlocked ? "missed-review" : "paywall") + '"><span>' + (unlocked ? "Unlocked" : "Locked") + '</span><strong>Missed Questions</strong><small>Review only what you got wrong.</small></button>',
       '<button class="locked-feature" data-action="' + (unlocked ? "cram-sheet" : "paywall") + '"><span>' + (unlocked ? "Unlocked" : "Locked") + '</span><strong>Mnemonic Sheet</strong><small>Printable cram sheet for the night before.</small></button>',
       '</div>',
@@ -909,6 +1277,8 @@
   function renderResults(root) {
     var session = state.session;
     var score = state.answers.filter(Boolean).length;
+    var percent = Math.round((score / session.questions.length) * 100);
+    var hitReadinessGoal = percent >= PASS_CONFIDENCE_GOAL;
     var missed = session.questions
       .map(function (question, index) {
         return { question: question, correct: state.answers[index] };
@@ -916,7 +1286,7 @@
       .filter(function (item) {
         return !item.correct;
       });
-    if (session.type === "section" && session.sectionId) {
+    if (session.sectionId) {
       var previous = state.progress[session.sectionId] || {};
       state.progress[session.sectionId] = Object.assign({}, previous, {
         score: score,
@@ -927,12 +1297,14 @@
     }
     root.innerHTML = [
       '<div class="education-app education-results">',
-      '<p class="eyebrow">Section complete</p>',
-      '<h2>' + escapeHtml(session.name) + " Score: " + score + "/" + session.questions.length + "</h2>",
+      '<p class="eyebrow">Practice complete</p>',
+      '<h2>' + escapeHtml(session.name) + " Score: " + score + "/" + session.questions.length + " (" + percent + "%)</h2>",
       isUnlocked()
-        ? '<p>You finished this paid prep mode. Keep drilling missed questions, print the mnemonic sheet, or run another mixed practice set.</p>'
+        ? hitReadinessGoal
+          ? '<p>That is the target zone: 90%+ here means you are practicing above the real pass line with room for pressure, wording changes, and state-law curveballs. Keep the margin repeatable before test day.</p>'
+          : '<p>You finished this paid prep mode. Keep drilling missed questions until 90%+ becomes repeatable; that is the margin this course is built around.</p>'
         : '<p>You finished the free section practice. Mixed practice, timed mock exams, saved progress, missed-question drills, weak-area scoring, and the complete mnemonic cram sheet are included in the $19 full prep unlock.</p>',
-      '<div class="result-actions">' + (isUnlocked() ? '<button class="button" data-action="mixed-practice">Run Mixed Practice</button><button class="button secondary" data-action="cram-sheet">Open Mnemonic Sheet</button>' : '<button class="button" data-action="paywall">Unlock Full Exam Prep - $19</button>') + '<button class="button secondary" data-action="dashboard">Choose Another Section</button></div>',
+      '<div class="result-actions">' + (isUnlocked() ? '<button class="button" data-action="mock-exam">Run 90% Readiness Exam</button><button class="button secondary" data-action="mixed-practice">Run Mixed Practice</button><button class="button secondary" data-action="cram-sheet">Open Mnemonic Sheet</button>' : '<button class="button" data-action="paywall">Unlock Full Exam Prep - $19</button>') + '<button class="button secondary" data-action="dashboard">Choose Another Section</button></div>',
       missed.length
         ? '<section class="missed-preview"><h3>Missed-question preview</h3>' +
           missed
@@ -1025,7 +1397,7 @@
       : '<p class="fine-print">Your unlock is active. If you already saved a restore code, keep it for another browser.</p>';
     root.insertAdjacentHTML(
       "beforeend",
-      '<div class="education-modal" role="dialog" aria-modal="true" aria-label="Full Prep Unlocked"><div class="education-modal-card"><button class="modal-close" data-action="close-paywall" aria-label="Close">Close</button><p class="eyebrow">Payment verified</p><h2>Full prep is unlocked.</h2><p>Mixed practice, timed mock exams, missed-question review, weak-area scoring, saved progress, and the full mnemonic cram sheet are ready.</p>' +
+      '<div class="education-modal" role="dialog" aria-modal="true" aria-label="Full Prep Unlocked"><div class="education-modal-card"><button class="modal-close" data-action="close-paywall" aria-label="Close">Close</button><p class="eyebrow">Payment verified</p><h2>Full prep is unlocked.</h2><p>All-state law drills, 6x exam-size pools, mixed practice, timed 90% readiness exams, missed-question review, saved progress, and the full mnemonic cram sheet are ready.</p>' +
         codeBlock +
         '<div class="result-actions"><button class="button" data-action="mixed-practice">Start Mixed Practice</button><button class="button secondary" data-action="dashboard">Dashboard</button></div></div></div>'
     );
@@ -1043,7 +1415,7 @@
       "beforeend",
       '<div class="education-modal" role="dialog" aria-modal="true" aria-label="Unlock Full Exam Prep"><div class="education-modal-card"><button class="modal-close" data-action="close-paywall" aria-label="Close">Close</button><p class="eyebrow">Full Exam Prep</p><h2>Unlock the real test simulation.</h2>' +
         (message ? '<div class="form-message">' + escapeHtml(message) + "</div>" : "") +
-        '<p>You have free section practice. The $19 unlock adds the tools candidates care about close to test day.</p><ul class="education-modal-benefits"><li>Mixed practice across all national sections</li><li>Timed mock exam mode</li><li>Saved progress, restore code, and missed-question review</li><li>Full mnemonic cram sheet for final review</li></ul><form class="unlock-form" data-unlock-form><label>Email for checkout<input name="email" type="email" autocomplete="email" required placeholder="you@example.com" value="' +
+        '<p>You have free section practice. The $19 unlock adds every state exam mode and a 6x pool so you can keep drilling until 90%+ feels normal before test day.</p><ul class="education-modal-benefits"><li>All 50 states plus DC</li><li>6x exam-size state question pools</li><li>Mixed national and state practice</li><li>Timed 90% readiness exam mode</li><li>Saved progress, restore code, and missed-question review</li><li>Full mnemonic cram sheet for final review</li></ul><form class="unlock-form" data-unlock-form><label>Email for checkout<input name="email" type="email" autocomplete="email" required placeholder="you@example.com" value="' +
         escapeHtml(pendingEmail) +
         '"></label><button class="button" type="submit">Continue to Secure Stripe Checkout - $19</button></form><div class="restore-divider"><span>Already paid?</span></div><form class="unlock-form restore-form" data-restore-form><label>Email used at checkout<input name="email" type="email" autocomplete="email" required placeholder="you@example.com" value="' +
         escapeHtml(pendingEmail) +
@@ -1098,6 +1470,10 @@
       if (isUnlocked()) startMixedPractice(root);
       else renderPaywall(root);
     }
+    if (name === "state-practice") {
+      if (isUnlocked()) startStatePractice(root);
+      else renderPaywall(root);
+    }
     if (name === "mock-exam") {
       if (isUnlocked()) startMockExam(root);
       else renderPaywall(root);
@@ -1136,6 +1512,18 @@
     if (name === "close-paywall") {
       removePaywall(root);
     }
+  }
+
+  function handleChange(root, event) {
+    var picker = event.target.closest("[data-state-select]");
+    if (!picker) return;
+    state.selectedStateCode = picker.value || DEFAULT_STATE_CODE;
+    try {
+      localStorage.setItem(STATE_CHOICE_KEY, state.selectedStateCode);
+    } catch (error) {
+      // State choice persistence is optional; the dashboard can still update.
+    }
+    renderDashboard(root);
   }
 
   function handleSubmit(root, event) {
@@ -1188,6 +1576,9 @@
     if (!hasCheckoutReturn) verifyStoredAccess(root);
     root.addEventListener("click", function (event) {
       handleClick(root, event);
+    });
+    root.addEventListener("change", function (event) {
+      handleChange(root, event);
     });
     root.addEventListener("submit", function (event) {
       handleSubmit(root, event);

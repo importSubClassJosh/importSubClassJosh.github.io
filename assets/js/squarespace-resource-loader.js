@@ -1,5 +1,5 @@
 (function () {
-  var LOADER_VERSION = '2026-06-10-education-legacy-link';
+  var LOADER_VERSION = '2026-06-10-state-exam-bank';
   if (window.brqSquarespaceResourceLoaderVersion === LOADER_VERSION) return;
   window.brqSquarespaceResourceLoaderVersion = LOADER_VERSION;
   window.brqSquarespaceResourceLoaderActive = true;
@@ -147,6 +147,7 @@
       '.brq-resource-root .education-shell{padding:42px 24px;background:linear-gradient(135deg,rgba(91,23,36,.08),rgba(94,109,99,.12)),#fbf7ef;}',
       '.brq-resource-root .education-app{max-width:1180px;margin:0 auto;padding:clamp(16px,2.4vw,26px);border:1px solid rgba(91,23,36,.16);border-radius:8px;background:linear-gradient(180deg,rgba(255,253,248,.98),rgba(250,246,237,.98)),#fffdf8;box-shadow:0 20px 54px rgba(37,37,37,.12);animation:brq-fade-rise .26s ease both;}',
       '.brq-resource-root .education-topbar,.brq-resource-root .quiz-header,.brq-resource-root .education-card-footer,.brq-resource-root .quiz-nav,.brq-resource-root .result-actions,.brq-resource-root .access-actions{display:flex;flex-wrap:wrap;gap:16px;align-items:center;justify-content:space-between;}',
+      '.brq-resource-root .state-picker-card{margin:16px 0;border-color:rgba(182,138,53,.34);background:linear-gradient(135deg,rgba(255,253,248,.98),rgba(248,240,229,.98)),#fffdf8;}.brq-resource-root .state-picker-label{display:grid;gap:7px;color:#252525;font-weight:800;}.brq-resource-root .state-picker-label select{width:min(100%,360px);min-height:46px;padding:10px 12px;border:1px solid rgba(91,23,36,.2);border-radius:6px;background:#fffdf8;color:#252525;font:inherit;box-shadow:inset 0 1px 0 rgba(255,255,255,.86);}.brq-resource-root .state-picker-card .education-card-footer{align-items:flex-end;}.brq-resource-root .state-picker-card .education-card-footer span{max-width:560px;color:#6b625b;font-size:.92rem;}',
       '.brq-resource-root .education-stats,.brq-resource-root .education-section-grid,.brq-resource-root .education-lock-row,.brq-resource-root .pricing-grid,.brq-resource-root .education-intro-grid{display:grid;gap:16px;margin-top:16px;}',
       '.brq-resource-root .education-stats{grid-template-columns:repeat(3,minmax(0,1fr));}.brq-resource-root .education-section-grid{grid-template-columns:repeat(3,minmax(0,1fr));}.brq-resource-root .education-lock-row{grid-template-columns:repeat(4,minmax(0,1fr));}.brq-resource-root .pricing-grid,.brq-resource-root .education-intro-grid{grid-template-columns:repeat(2,minmax(0,1fr));max-width:1120px;margin-left:auto;margin-right:auto;}',
       '.brq-resource-root .education-section-card,.brq-resource-root .question-panel,.brq-resource-root .missed-preview,.brq-resource-root .pricing-card,.brq-resource-root .education-intro-grid article,.brq-resource-root .education-note{border:1px solid rgba(91,23,36,.16);border-radius:8px;background:#fffdf8;padding:18px;box-shadow:0 8px 24px rgba(37,37,37,.06);}',

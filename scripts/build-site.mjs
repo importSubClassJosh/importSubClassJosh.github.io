@@ -770,9 +770,9 @@ function educationSchema() {
   return JSON.stringify({
     "@context": "https://schema.org",
     "@type": "Course",
-    name: "National Real Estate License Exam Prep",
+    name: "All-State Real Estate License Exam Prep",
     description:
-      "Original national real estate license exam-style practice questions organized by section, with explanations and memory tricks.",
+      "Original real estate license exam-style practice for national topics and state law, with all-state practice modes, 6x exam-size question pools, explanations, and memory tricks.",
     provider: {
       "@type": "Organization",
       name: siteName,
@@ -780,7 +780,7 @@ function educationSchema() {
     },
     educationalLevel: "Professional licensing exam preparation",
     teaches:
-      "Property ownership, land use controls, valuation, financing, agency, disclosures, contracts, leasing, transfer of title, real estate practice, fair housing, and real estate calculations",
+      "Property ownership, land use controls, valuation, financing, agency, disclosures, contracts, leasing, transfer of title, real estate practice, fair housing, real estate calculations, and state-specific real estate law practice",
     inLanguage: "en-US",
     isAccessibleForFree: true,
     offers: {
@@ -809,19 +809,19 @@ function educationHero() {
   const heroImage = "https://importsubclassjosh.github.io/assets/images/resource-center-banner.png";
   return `<section class="education-hero" style="--education-hero-image: url('${heroImage}')">
     <div class="education-hero-inner">
-      <p class="eyebrow">National real estate exam prep</p>
+      <p class="eyebrow">All-state real estate exam prep</p>
       <h1>Real Estate License Exam Prep</h1>
-      <p>Practice by topic for free, then unlock mixed practice, timed mock exams, saved progress, missed-question review, and the full mnemonic cram sheet for one $19 payment.</p>
+      <p>Choose your state, drill national and state-law questions, and keep going until 90%+ feels repeatable. The full prep unlock gives you 6x exam-size question pools, timed readiness exams, saved progress, missed-question review, and the full mnemonic cram sheet for one $19 payment.</p>
       <div class="education-hero-actions">
         <a class="button" href="#practice">Start Free Practice</a>
-        <a class="button secondary" href="#full-exam-prep">Unlock Full Prep - $19</a>
+        <a class="button secondary" href="#full-exam-prep">Train to 90%+ - $19</a>
       </div>
       <dl class="education-hero-metrics" aria-label="Exam prep details">
-        <div><dt>275</dt><dd>free section questions</dd></div>
-        <div><dt>11</dt><dd>national topic sections</dd></div>
-        <div><dt>$19</dt><dd>one-time full unlock</dd></div>
+        <div><dt>51</dt><dd>state exam modes</dd></div>
+        <div><dt>6x</dt><dd>exam-size pools</dd></div>
+        <div><dt>90%+</dt><dd>readiness target</dd></div>
       </dl>
-      <p class="education-hero-note">Original exam-style practice questions with plain-English explanations and memory tricks. No protected exam questions or pass guarantee.</p>
+      <p class="education-hero-note">Original exam-style practice questions with plain-English explanations and memory tricks. No protected exam questions or pass guarantee; this is built to create margin above the passing line.</p>
     </div>
   </section>`;
 }
@@ -844,7 +844,7 @@ function renderHome() {
     </div>
     <div class="card-grid four">
       ${linkCard({ href: "/start-here/#new-georgia-agent", title: "New Georgia agents", text: "First-client readiness, brokerage questions, advertising basics, and transaction checklists.", meta: "Agent path" })}
-      ${linkCard({ href: "/education/", title: "License exam prep", text: "National exam-style practice by section, with 25 free questions per section and locked mixed exams.", meta: "Education" })}
+      ${linkCard({ href: "/education/", title: "License exam prep", text: "Free national section practice plus all-state exam modes, 6x pools, and a 90%+ readiness target.", meta: "Education" })}
       ${linkCard({ href: "/start-here/#experienced-agent", title: "Experienced agents", text: "Brokerage models, branding, referrals, vendor systems, and productive independence.", meta: "Agent path" })}
       ${linkCard({ href: "/start-here/#referrals-rentals", title: "Referrals and rentals", text: "Referral commission questions, rental workflows, and relationship-based business building.", meta: "Flexible business" })}
       ${linkCard({ href: "/start-here/#buyers-sellers-investors", title: "Buyers, sellers, investors", text: "Education for listing prep, buyer process, short-term rentals, and long-term wealth planning.", meta: "Public education" })}
@@ -875,12 +875,12 @@ function renderEducation() {
       <article>
         <p class="eyebrow">Free by section</p>
         <h2>Choose exactly what you want to drill.</h2>
-        <p>Each national topic section includes 25 free original exam-style questions with answer feedback, plain-English explanations, and memory tricks. Mixed practice and timed exams are locked because that is the closest simulation of the real test.</p>
+        <p>Each national topic section includes 25 free original exam-style questions with answer feedback, plain-English explanations, and memory tricks. Full prep adds your state exam mode, mixed national/state practice, and timed readiness exams built around a 90%+ target.</p>
       </article>
       <article>
-        <p class="eyebrow">AdSense-ready layout</p>
-        <h2>Useful public content first.</h2>
-        <p>Public study notes, section explanations, and ad space sit away from quiz buttons and checkout prompts. The paid tier stays simple: one $19 unlock for the serious prep tools.</p>
+        <p class="eyebrow">Train with margin</p>
+        <h2>Do not aim for barely passing.</h2>
+        <p>The goal is to make candidates so rounded and comfortable that 90%+ becomes repeatable in practice. That does not guarantee a licensing result, but it gives you a stronger buffer than studying only to the minimum pass line.</p>
       </article>
     </div>
     <aside class="ad-slot" aria-label="Advertisement">
@@ -914,33 +914,34 @@ function renderEducation() {
       </article>
       <article class="pricing-card featured">
         <p class="eyebrow">One-time unlock</p>
-        <h3>Full Exam Prep</h3>
+        <h3>All-State Full Prep</h3>
         <p class="price">$19</p>
         <ul>
-          <li>Mixed practice across all sections</li>
-          <li>Timed mock exam mode</li>
+          <li>All 50 states plus DC</li>
+          <li>6x exam-size state question pools</li>
+          <li>Mixed national and state practice</li>
+          <li>Timed 90% readiness exam mode</li>
           <li>Saved progress with restore access</li>
           <li>Missed-question review</li>
-          <li>Weak-area dashboard</li>
           <li>Full mnemonic cram sheet</li>
         </ul>
-        <a class="button" href="#practice">Unlock Full Exam Prep - $19</a>
+        <a class="button" href="#practice">Unlock 90% Readiness Prep - $19</a>
       </article>
     </div>
   </section>
   <section class="content-band">
     <div class="education-note">
       <p class="eyebrow">Current outline alignment</p>
-      <h2>Built Around Published National Exam Topics</h2>
-      <p>This prep page uses original questions written to match national real estate salesperson exam topics and common multiple-choice patterns. It does not claim to contain actual protected exam questions, and candidates should verify the latest candidate bulletin for their state before scheduling an exam.</p>
-      <p>Reference: <a href="https://test-takers.psiexams.com/api/content/bulletin/1001" rel="nofollow">PSI Candidate Information Bulletin</a>.</p>
+      <h2>Built Around Published National and State Exam Topics</h2>
+      <p>This prep page uses original questions written to match national real estate salesperson exam topics, common state-law patterns, and the way public candidate bulletins divide national and state portions. It does not claim to contain actual protected exam questions, and candidates should verify the latest candidate bulletin for their state before scheduling an exam.</p>
+      <p>References: <a href="https://www.psiexams.com/licensure/real-estate/" rel="nofollow">PSI real estate licensing exams</a>, <a href="https://www.pearsonvue.com/content/dam/VUE/vue/en/documents/publications/094400.pdf" rel="nofollow">Pearson VUE Texas handbook</a>, and <a href="https://www.dre.ca.gov/examinees/SalesExamContent.html" rel="nofollow">California DRE exam content</a>.</p>
     </div>
     ${disclaimerBlock()}
   </section>`;
   return pageLayout({
     title: "Real Estate License Exam Prep",
     description:
-      "National real estate license exam prep with free section practice, answer explanations, memory tricks, and a $19 full exam prep unlock.",
+      "All-state real estate license exam prep with free national section practice, state-law drills, 6x exam-size question pools, answer explanations, memory tricks, and a $19 full prep unlock.",
     slug: "/education/",
     image: "resource-center-banner.png",
     schema: educationSchema(),
