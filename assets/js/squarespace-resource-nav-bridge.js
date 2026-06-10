@@ -1,5 +1,5 @@
 (function () {
-  var NAV_BRIDGE_VERSION = '2026-06-10-education-legacy-link';
+  var NAV_BRIDGE_VERSION = '2026-06-10-education-legacy-link-2';
   if (window.brqResourceNavBridgeVersion === NAV_BRIDGE_VERSION) return;
   window.brqResourceNavBridgeVersion = NAV_BRIDGE_VERSION;
   window.brqResourceNavBridgeLoaded = true;
@@ -8,7 +8,7 @@
   var RESOURCE_TEXT = 'GUIDES';
   var EDUCATION_HREF = '/liturature/';
   var EDUCATION_TEXT = 'EDUCATION';
-  var EDUCATION_ALIASES = ['/education/', '/education', '/liturature/', '/liturature'];
+  var EDUCATION_ALIASES = ['/education/', '/liturature/'];
 
   function text(value) {
     return String(value || '').replace(/\s+/g, ' ').trim().toUpperCase();
@@ -21,10 +21,25 @@
     });
   }
 
+  function sameSitePath(value) {
+    var url;
+    try {
+      url = new URL(value, window.location.origin);
+    } catch (error) {
+      return '';
+    }
+    if (url.origin !== window.location.origin) return '';
+    return url.pathname.endsWith('/') ? url.pathname : url.pathname + '/';
+  }
+
+  function isEducationHref(value) {
+    return EDUCATION_ALIASES.indexOf(sameSitePath(value)) !== -1;
+  }
+
   function hasEducationLink(root) {
     return Array.prototype.some.call(root.querySelectorAll('a'), function (link) {
       var href = link.getAttribute('href') || '';
-      return EDUCATION_ALIASES.indexOf(href) !== -1;
+      return isEducationHref(href);
     });
   }
 
@@ -42,7 +57,7 @@
   function normalizeEducationLinks(root) {
     Array.prototype.forEach.call(root.querySelectorAll('a'), function (link) {
       var href = link.getAttribute('href') || '';
-      if (EDUCATION_ALIASES.indexOf(href) === -1) return;
+      if (!isEducationHref(href)) return;
       var mobileLabel = link.querySelector('.header-menu-nav-item-content');
       if (mobileLabel) mobileLabel.textContent = EDUCATION_TEXT;
       else link.textContent = EDUCATION_TEXT;
