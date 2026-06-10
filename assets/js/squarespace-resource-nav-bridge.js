@@ -1,13 +1,14 @@
 (function () {
-  var NAV_BRIDGE_VERSION = '2026-05-28-submenu-fix';
+  var NAV_BRIDGE_VERSION = '2026-06-10-education-legacy-link';
   if (window.brqResourceNavBridgeVersion === NAV_BRIDGE_VERSION) return;
   window.brqResourceNavBridgeVersion = NAV_BRIDGE_VERSION;
   window.brqResourceNavBridgeLoaded = true;
 
   var RESOURCE_HREF = '/resource-center/';
   var RESOURCE_TEXT = 'GUIDES';
-  var EDUCATION_HREF = '/education/';
+  var EDUCATION_HREF = '/liturature/';
   var EDUCATION_TEXT = 'EDUCATION';
+  var EDUCATION_ALIASES = ['/education/', '/education', '/liturature/', '/liturature'];
 
   function text(value) {
     return String(value || '').replace(/\s+/g, ' ').trim().toUpperCase();
@@ -23,7 +24,7 @@
   function hasEducationLink(root) {
     return Array.prototype.some.call(root.querySelectorAll('a'), function (link) {
       var href = link.getAttribute('href') || '';
-      return href === EDUCATION_HREF || href === '/education';
+      return EDUCATION_ALIASES.indexOf(href) !== -1;
     });
   }
 
@@ -41,10 +42,12 @@
   function normalizeEducationLinks(root) {
     Array.prototype.forEach.call(root.querySelectorAll('a'), function (link) {
       var href = link.getAttribute('href') || '';
-      if (href !== EDUCATION_HREF && href !== '/education') return;
+      if (EDUCATION_ALIASES.indexOf(href) === -1) return;
       var mobileLabel = link.querySelector('.header-menu-nav-item-content');
       if (mobileLabel) mobileLabel.textContent = EDUCATION_TEXT;
       else link.textContent = EDUCATION_TEXT;
+      link.href = EDUCATION_HREF;
+      link.setAttribute('href', EDUCATION_HREF);
       link.setAttribute('aria-label', 'Real estate license exam prep education');
     });
   }

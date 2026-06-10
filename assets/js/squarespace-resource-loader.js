@@ -1,5 +1,5 @@
 (function () {
-  var LOADER_VERSION = '2026-05-28-domain-polish-3';
+  var LOADER_VERSION = '2026-06-10-education-legacy-link';
   if (window.brqSquarespaceResourceLoaderVersion === LOADER_VERSION) return;
   window.brqSquarespaceResourceLoaderVersion = LOADER_VERSION;
   window.brqSquarespaceResourceLoaderActive = true;
@@ -8,7 +8,7 @@
   var ROUTES = {
     '/start-here/': '/start-here/',
     '/education/': '/education/',
-    // Squarespace currently redirects /education to this legacy typo slug.
+    // Keep the exam-prep content mounted on Squarespace's current legacy page.
     '/liturature/': '/education/',
     '/resource-center/': '/resource-center/',
     '/articles/': '/articles/',
@@ -94,12 +94,6 @@
     });
     observer.observe(document.documentElement, { childList: true, subtree: true });
     removeLegacyResourceNav();
-  }
-
-  function normalizeVisibleEducationUrl() {
-    if (path !== '/liturature/' || sourcePath !== '/education/' || !window.history || !window.history.replaceState) return;
-    var nextUrl = '/education/' + (window.location.search || '') + (window.location.hash || '');
-    window.history.replaceState({ brqEducationAlias: true }, '', nextUrl);
   }
 
   function ensureStyle() {
@@ -204,6 +198,7 @@
     if (next.indexOf('/downloads/') === 0) next = '/' + next.split('/').filter(Boolean).slice(-1)[0] + '/';
     if (next.indexOf('/category/') === 0) next = '/' + next.split('/').filter(Boolean).slice(-1)[0] + '/';
     if (next === '/author/the-agent-resource-desk/' || next === '/author/the-agent-resource-desk') next = '/the-agent-resource-desk/';
+    if (next === '/education/' || next === '/education') next = '/liturature/';
     return next + (url.hash || '');
   }
 
@@ -260,7 +255,6 @@
     page.appendChild(root);
     removeLegacyResourceNav();
     updateMeta(content);
-    normalizeVisibleEducationUrl();
     if (sourcePath === '/education/') ensureEducationQuizScript();
   }
 
